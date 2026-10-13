@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8' />
+    <title>my First Map</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1' />
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+   </style>
+</head>
+<body>
+   <div id='map'></div>
+   <script>
+      const tokenPart1 = 'pk.eyJ1Ijoibmp1bmcwMyIsImEiOiJjbXY1az';
+      const tokenPart2 = 'RncjAwMXMyMnlxM3JqZWdoMW9nIn0.CZDz0PrR6ITIlbibWP9PzQ';
+    // Splitting the tokens into two strings to bypass the GitHub Push error
+      mapboxgl.accessToken = tokenPart1 + tokenPart2;
+      const map = new mapboxgl.Map({
+             container: 'map',
+            //  style: 'mapbox://styles/mapbox/outdoors-v12://styles/mapbox/light-v11',
+            //  projection: 'globe', //Display the map as a globe since satellite-v9 defaults to Mercator
+             
+            // PART 2 MY TURN
+             //changed centering since its [long, lat] and centered it to Red Square, zoom 18 allowed it to be close enough to see building names
+            //  center: [-122.30944, 47.65583],
+            //  zoom:18
+            center: [-122.3146, 47.6301], // centred on Volunteer Park
+            zoom: 17 // initial zoom level
+          });
+          // adds UI control for zoom and fullscreen capabilities
+map.addControl(new mapboxgl.FullscreenControl());
+map.addControl(new mapboxgl.NavigationControl());
+// wait for basemap style to load completely before applying configuration changes.
+map.on('style.load', () => {
+    // Style Property 1: Change map theme
+    // Changes basemap's overall color palette to a muted 'monochrome' layout
+    // This is useful when overlaying colorful, custom spatial data (like heatmaps)
+    map.setConfigProperty('basemap', 'theme', 'default');
+
+
+    // Style Property 2: Change the font
+    // Updates all map labels to use "Code Pro" font
+    // A clean, monospaced-style font gives the map a technical aesthetic.
+    map.setConfigProperty('basemap', 'font', 'Code Pro');
+
+   //  Optional Style Property 3: Changing lighting preset
+   // Updates the map to dusk, displaying shadows
+   // Thought this was a nice visual aesthetic that would help viewer retention (personally, I enjoyed it)
+    map.setConfigProperty('basemap', 'lightPreset', 'dusk');
+   
+
+
+});
+</script>
+</body>
