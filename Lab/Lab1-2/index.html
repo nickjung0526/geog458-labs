@@ -36,14 +36,15 @@ map.addControl(new mapboxgl.NavigationControl());
 // wait for basemap style to load completely before applying configuration changes.
 map.on('style.load', () => {
     // Style Property 1: Change map theme
-    // Changes basemap's overall color palette to a muted 'monochrome' layout
-    // This is useful when overlaying colorful, custom spatial data (like heatmaps)
+    // Keep it as default
+    // I changed the basemap theme to 'default'. I found this setting to be highly useful when users need to identify specific landmarks and local amenities, such as the features within Volunteer Park. Because the theme clearly displays these recognizable icons and natural green spaces, making the map engaging for general navigation.
     map.setConfigProperty('basemap', 'theme', 'default');
 
 
     // Style Property 2: Change the font
     // Updates all map labels to use "Code Pro" font
     // A clean, monospaced-style font gives the map a technical aesthetic.
+    // I changed the map labels to the "Code Pro" font. This updates all texts on the map to a clean, monospaced style. This is useful when trying to give the map a technical, modern aesthetic, such as in a data dashboard or developer tool.
     map.setConfigProperty('basemap', 'font', 'Code Pro');
 
    //  Optional Style Property 3: Changing lighting preset
