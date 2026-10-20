@@ -72,6 +72,13 @@
 // B. Build the Legend with JavaScript
  // Anchor the legend to the HTML element with id="legend".
         const legend = document.getElementById('legend');
+// This map uses graduated circle symbols to show city population
+// Cities are divided into five population classes, ranging from under 100,000 to 10 million or more.
+// Blue represents smaller and medium sized cities, while 
+// orange highlights cities with 5M-10M people.
+// Red emphasizes megacities with more than 10M population.
+// These graduated symbols communicate population categories, rather than making circle area proportional to its population.
+
         const grades = [2, 4.5, 8.5];
         const radii = [4, 9, 17];
         const colors = ['#fdd49e', '#d7301f', '#7f0000'];
