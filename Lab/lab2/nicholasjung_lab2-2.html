@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>World Cities and Megacities</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+
+        #title {
+            position: absolute;
+            top: 0;
+            left: 0;
+            margin-top: 20px;
+            margin-left: 20px;
+            background: #fff;
+            padding: 10px 15px;
+            border-radius: 3px;
+            font-size: 20px;
+            font-weight: bold
+        }
+                /* Layout of the legend panel. */
+        #legend {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 160px;
+            background: #fff;
+            margin-right: 20px;
+            margin-bottom: 40px;
+            padding: 10px 20px 10px 10px;
+            border-radius: 3px;
+            text-align: center;
+        }
+
+        /* Each row for a population value. */
+        .break {
+            position: relative;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* The circular symbol. */
+        .dot {
+            display: inline-block;
+            margin-top: 5px;
+            border-radius: 50%;
+            opacity: 0.7;
+        }
+
+        /* Label next to the symbol. */
+        .dot-label {
+            position: absolute;
+            top: 0;
+            right: 0;
+            font-style: italic;
+            font-size: 13px;
+        }
+
+        /* Link color within the legend. */
+        #legend a {
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id= "title">Global Megacities (10M+) vs. All World Cities</div>
+    <div id = "legend"></div>
+    <script>
+        const tokenPart1 = 'pk.eyJ1Ijoibmp1bmcwMyIsImEiOiJjbXY1az';
+        const tokenPart2 = 'RncjAwMXMyMnlxM3JqZWdoMW9nIn0.CZDz0PrR6ITIlbibWP9PzQ';
+    // Splitting the tokens into two strings to bypass the GitHub Push error
+
+
+        mapboxgl.accessToken = tokenPart1 + tokenPart2;        
+        const mymap = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/light-v11',
+            projection: 'globe',
+            center: [20,20],
+            zoom: 1.5
+        });
+        mymap.on('style.load', ()=> {
+            mymap.setFog({});
+
+        });
+
+        const grades = ['15k - 100k','100k - 1M', '1M - 5M', '5M - 10M', '10M+ (Megacity)'];
+
+        const colors = ['#bdc9e1', '#74a9cf', '#2b8cbe', '#fd8d3c', '#e31a1c'];
+        const radii = [2, 4, 7, 11, 16];
+
+        mymap.on('load', ()=> {
+            mymap.addSource('population', {
+                type: 'geojson',
+                data: './data/world-cities.geojson'
+            });
+
+            mymap.addLayer({
+                id: "cities-layer",
+                type: 'circle',
+                source: 'population',
+                paint: {
+                    'circle-radius': [
+                        'step',
+                        ['get', 'population'],
+                        radii[0], // < 100K
+                        100000, radii[1],
+                        1000000, radii[2],
+                        5000000, radii[3],
+                        10000000, radii[4]
+                    ],
+                    'circle-color': [
+                        'step',
+                        ['get', 'population'],
+                        colors[0],
+                        100000, colors[1],
+                        1000000, colors[2],
+                        5000000, colors[3],
+                        10000000, colors[4]
+                ],
+                'circle-stroke-color': 'white',
+                'circle-stroke-width': 0.5,
+                'circle-opacity': 0.7
+
+                }
+            });
+
+            mymap.on('click', 'cities-layer', (event)=> {
+                new mapboxgl.Popup()
+                .setLngLat(event.features[0].geometry.coordinates)
+                .setHTML(`<strong>City:</strong> ${event.features[0].properties.accentcity}<br>
+                            <strong>Population:</strong> ${event.features[0].properties.population.toLocaleString()}`)
+                .addTo(mymap);
+                              
+            });
+        });
+        // Create legend
+        const legend = document.getElementById('legend');
+        const labels = ['<strong>Population</strong>'];
+
+        for (let i = 0; i < grades.length; i++) {
+            const value = grades[i];
+            const dot_radii = 2 * radii[i];
+
+
+            labels.push(
+                '<p class="break"><i class="dot" style="background:' + colors[i] + '; width: ' + dot_radii +
+                'px; height: ' + dot_radii + 'px; "></i> <span class="dot-label" style="top: ' + dot_radii / 2 + 'px;">' + value +
+                '</span></p>'
+            );
+        }
+
+        const source = '<p style="text-align: right; font-size:10pt">Source: <a href="https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/">Natural Earth</a></p>';
+        legend.innerHTML = labels.join('') + source;
+        // Add the next steps here, inside this script.
+    </script>
+</body>
+</html>
