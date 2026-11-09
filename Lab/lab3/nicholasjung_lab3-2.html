@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 3: King County Rainfall</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.15.0/dist/maplibre-gl.css">
+  <style>
+    body { margin: 0; font: 14px/1.5 Arial, sans-serif; color: #182e3a; }
+    #map { position: absolute; inset: 0; }
+    #panel {
+      position: absolute; top: 12px; left: 12px; padding: 16px;
+      width: 260px; max-width: calc(100% - 100px); background: white;
+      max-height: calc(100% - 80px); overflow: auto; border-radius: 6px;
+    }
+    h1 { margin: 0 0 8px; font-size: 19px; }
+    p { margin: 8px 0; }
+    .ramp {
+      height: 14px;
+      background: linear-gradient(to right, #eff3ff, #bdd7e7, #6baed6, #3182bd, #08519c);
+    }
+    .values { display: flex; justify-content: space-between; }AW
+    .maplibregl-popup-content { white-space: pre-line; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <section id="panel">
+    <h1>King County Rainfall</h1>
+    <p>March 13, 2026 | NOAA Climate Data</p>
+    <p id="status">Step 1: map frame ready; add the basemap next.</p>
+    <div id="surface-control" hidden>
+      <label><input id="show-surface" type="checkbox" checked> Show interpolation</label>
+    </div>
+    <div id="station-control" hidden>
+      <label><input id="show-stations" type="checkbox" checked> Show stations</label>
+    </div>
+    <div id="legend" hidden>
+      <p><strong>Estimated Rainfall (inches)</strong></p>
+      <div class="ramp"></div>
+      <div class="values"><span>0.0</span><span>2.25</span><span>4.5</span></div>
+      <p>IDW estimates between NOAA stations.</p>
+    </div>
+  </section>
+
+  <script type="module">
+    import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.15.0/dist/maplibre-gl.mjs';
+
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        version: 8,
+        sources: {},
+        layers: [{
+          id: 'background',
+          type: 'background',
+          paint: { 'background-color': '#edf1f0' }
+        }]
+      },
+      center: [-121.875, 47.45],
+      zoom: 9,
+      minZoom: 8,
+      maxZoom: 12,
+      maxBounds: [[-122.55, 47.05], [-121.20, 47.85]]
+    });
+
+    map.addControl(new maplibregl.NavigationControl());
+    map.addControl(new maplibregl.ScaleControl({ unit: 'imperial' }));
+
+    map.on('error', (event) => {
+      document.getElementById('status').textContent =
+        'Load error: check the file path and browser Console.';
+      console.error(event.error);
+    });
+
+    map.on('load', () => {
+      map.addSource('basemap-tiles', {
+        type: 'raster',
+        tiles: ['assets/mapbox-independent/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        scheme: 'xyz',
+        minzoom: 8,
+        maxzoom: 12,
+        bounds: [-122.55, 47.05, -121.20, 47.85],
+        attribution: '© Mapbox © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      });
+      map.addLayer({
+        id: 'basemap',
+        type: 'raster',
+        source: 'basemap-tiles',
+        paint: { 'raster-opacity': 1, 'raster-fade-duration': 0 }
+      });
+
+      document.getElementById('status').textContent =
+        'Step 2: check your Studio basemap; pan and zoom.';
+
+      map.addSource('rainfall-tiles', {
+        type: 'raster',
+        tiles: ['assets/rainfall-theme/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        scheme: 'xyz',
+        minzoom: 8,
+        maxzoom: 12,
+        bounds: [-122.55, 47.05, -121.20, 47.85],
+        attribution: 'Rainfall: NOAA GHCN-Daily, 2026-03-13; IDW and map by Nicholas Jung'
+      });
+      map.addLayer({
+        id: 'rainfall-surface',
+        type: 'raster',
+        source: 'rainfall-tiles',
+        paint: { 'raster-opacity': 0.7, 'raster-fade-duration': 0 }
+      });
+
+      document.getElementById('surface-control').hidden = false;
+      document.getElementById('legend').hidden = false;
+      document.getElementById('show-surface').addEventListener('change', (event) => {
+        map.setLayoutProperty('rainfall-surface', 'visibility',
+          event.target.checked ? 'visible' : 'none');
+        document.getElementById('legend').hidden = !event.target.checked;
+      });
+      document.getElementById('status').textContent =
+        'Step 3: toggle the interpolation to compare it with the basemap.';
+
+      map.addSource('station-data', {
+        type: 'geojson',
+        data: 'data/rainfall_stations.geojson'
+      });
+      map.addLayer({
+        id: 'stations',
+        type: 'circle',
+        source: 'station-data',
+        paint: {
+          'circle-radius': 6,
+          'circle-color': '#08519c',
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2
+        }
+      });
+
+      map.on('click', 'stations', (event) => {
+        const feature = event.features[0];
+        const station = feature.properties;
+        new maplibregl.Popup()
+          .setLngLat(feature.geometry.coordinates)
+          .setText([
+            station.NAME,
+            'Measured Rainfall: ' + station.PRCP + ' in',
+            'Elevation: ' + station.ELEVATION + ' m',
+            'Date: ' + station.DATE,
+            'Station ID: ' + station.STATION
+          ].join('\n'))
+          .addTo(map);
+      });
+      
+      map.on('mouseenter', 'stations', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', 'stations', () => {
+        map.getCanvas().style.cursor = '';
+      });
+      
+      document.getElementById('station-control').hidden = false;
+      document.getElementById('show-stations').addEventListener('change', (event) => {
+        map.setLayoutProperty('stations', 'visibility',
+          event.target.checked ? 'visible' : 'none');
+      });
+      document.getElementById('status').textContent =
+        'Step 4: click a station to read its measured value.';
+    });
+  </script>
+</body>
+</html>
